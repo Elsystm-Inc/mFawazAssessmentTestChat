@@ -2,6 +2,8 @@
 
 Chat App Task.
 
+Initial Start
+
 ## Getting Started
 
 2- The second task will measure your ability to integrate flutter with Firebase, work with push notifications, real-time databases, local databases, and caching methods.
