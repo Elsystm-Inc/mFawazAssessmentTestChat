@@ -1,179 +1,224 @@
-import 'dart:convert';
-
-import 'package:mfawazTestChat/utils/app_exceptions.dart';
-import 'package:mfawazTestChat/utils/api_caller.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chat_app/data/sources/firebase/cloud_messaging.dart';
+import 'package:chat_app/utils/api_caller.dart';
+import 'dart:io';
+import 'package:chat_app/data/sources/firebase/firebase_auth.dart';
+import 'package:chat_app/utils/constant.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'dart:async';
 
 import '../../main.dart';
-import '../model/user_model.dart';
 
-abstract class UserRepository {
-  Future<User> login(
-    String email,
-    String password,
-    String platform,
-    String firebaseToken,
-  );
-
-  Future<User> register(
-    String email,
-    String name,
-    String username,
-    String phone,
-    String country,
-    String password,
-    String passwordConfirmation,
-    String platform,
-    String firebaseToken,
-  );
-
-  Future<User> update(User user);
-
-  Future<User> updateProfilePicture(String photo, String name);
-
-  Future<String> forgetPassword(String email);
-
-  Future<String> resetPassword(String email, String token, String newPassword);
-
-  Future<User> fetchUserData();
-
-  Future<User> loadUserData(String firebaseToken);
-
-  logout();
+enum ConnectionState {
+  online,
+  offline,
+  poor,
 }
 
-class UserDataRepository implements UserRepository {
-  APICaller _apiCaller = new APICaller();
+class UserRepository {
+  static final UserRepository instance = UserRepository._privateConstructor();
+  final _auth = FbAuth.instance;
+  final _cloudMessaging = CloudMessaging.instance;
+  final DatabaseReference _databaseReference =
+      FirebaseDatabase(databaseURL: Constants.realtimeDbUrl).reference();
+  APICaller apiCaller = APICaller();
 
-  @override
-  Future<User> fetchUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey('userData')) {
-      throw UnauthorisedException('no user logged in');
+  UserRepository._privateConstructor();
+
+  Future<User> register({
+    @required String email,
+    @required String password,
+    @required String nickname,
+    @required File avatarImageFile,
+  }) async {
+    try {
+      User newUser = await _auth.registerWithEmail(
+        email: email,
+        password: password,
+        nickname: nickname,
+        avatarImageFile: avatarImageFile,
+      );
+      MyApp.userId = newUser.uid;
+      return newUser;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        Fluttertoast.showToast(msg: 'The password provided is too weak.');
+      } else if (e.code == 'email-already-in-use') {
+        Fluttertoast.showToast(
+            msg: 'The account already exists for that email.');
+      }
+    } catch (e) {
+      print(e);
     }
-    //User user = User.fromJson(json.decode(prefs.get('userData')));
-    // final expiryDate = DateTime.parse(prefs.get('expiryDate'));
-    // if (expiryDate.isBefore(DateTime.now())) {
-    //   throw UnauthorisedException('Expired');
-    // }
     return null;
   }
 
-  @override
-  Future<String> forgetPassword(String email) async {
-    _apiCaller.setUrl("/password/create");
-    final responseData = await _apiCaller.postData(
-      body: {"email": email},
-    );
-    return responseData['message'];
-  }
-
-  @override
-  Future<User> login(String email, String password, String platform, String firebaseToken) async {
-    _apiCaller.setUrl("/login");
-    final responseData = await _apiCaller.postData(
-      body: {
-        "username": email,
-        "password": password,
-        "firebase_token": firebaseToken ?? "firebaseToken",
-        "platform": platform
-      },
-    );
-    // User user = User.fromJson(responseData['user']);
-    // DateTime _expiryDate = DateTime.parse(responseData['expires_at']);
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('userData', "temp");
-    prefs.setString('token', 'Bearer ' + responseData['payload']);
-    // prefs.setString('expiryDate', _expiryDate.toIso8601String());
-    // prefs.setBool('loggedIn', true);
-    // return user;
+  Future<User> login({
+    @required String email,
+    @required String password,
+  }) async {
+    try {
+      User newUser =
+          await _auth.signInWithEmail(email: email, password: password);
+      MyApp.userId = newUser.uid;
+      return newUser;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        Fluttertoast.showToast(msg: 'No user found for that email.');
+      } else if (e.code == 'wrong-password') {
+        Fluttertoast.showToast(msg: 'Wrong password provided for that user.');
+      }
+    } catch (e) {
+      print(e);
+    }
     return null;
   }
 
-  @override
-  Future<User> register(String email, String name, String username, String phone, String country, String password,
-      String passwordConfirmation, String platform, String firebaseToken) async {
-    _apiCaller.setUrl("/register");
-    final responseData = await _apiCaller.postData(body: {
-      "name": name,
-      "email": email,
-      "phone": phone,
-      "country": country,
-      "username": username,
-      "password": password,
-      "firebase_token": firebaseToken,
-      "platform": platform
+  Future<void> setStatus(String status) async {
+    return await _databaseReference.child(_auth.getCurrentUser().uid).set({
+      'status': status,
     });
-    User user = User.fromJson(responseData['user']);
-    DateTime _expiryDate = DateTime.parse(responseData['expires_at']);
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('userData', json.encode(user));
-    prefs.setString('token', 'Bearer ' + responseData['access_token']);
-    prefs.setString('expiryDate', _expiryDate.toIso8601String());
-    prefs.setBool('loggedIn', true);
-    return user;
   }
 
-  @override
-  Future<String> resetPassword(String email, String token, String newPassword) async {
-    _apiCaller.setUrl("/password/reset");
-    final responseData = await _apiCaller.postData(
-      body: {"email": email, "token": token},
-      needAuthorization: true,
-    );
-    return responseData;
+  void setupPushNotifications() {
+    _cloudMessaging.registerNotification();
+    _cloudMessaging.configLocalNotification();
   }
 
-  @override
-  Future<User> update(User updatedUser) async {
-    final prefs = await SharedPreferences.getInstance();
-    _apiCaller.setUrl("/update-user-data");
-    final responseData = await _apiCaller.postData(
-      body: updatedUser.toUpdateJson(),
-      needAuthorization: true,
-    );
-    User user = User.fromJson(responseData['user']);
-    prefs.setString('userData', json.encode(user));
-    return user;
+  Future<void> logout() async {
+    await _auth.signOut();
   }
 
-  @override
-  Future<User> updateProfilePicture(String photo, String name) async {
-    final prefs = await SharedPreferences.getInstance();
-    _apiCaller.setUrl("/update-user-profile-picture");
-    final responseData = await _apiCaller.postData(
-      body: {
-        "photo": photo,
-        "name": name,
-      },
-      needAuthorization: true,
-    );
-    User user = User.fromJson(responseData['user']);
-    prefs.setString('userData', json.encode(user));
-    return user;
+  // Future<List<Person>> getAllPeople() async {
+  //   ConnectionState connectionState = await returnConnectionState();
+  //   if (connectionState == ConnectionState.online) {
+  //     return getAllPeopleOnline();
+  //   } else if (connectionState == ConnectionState.poor) {
+  //     return getAllPeopleFromFirebase();
+  //   } else {
+  //     return getAllPeopleOffline();
+  //   }
+  // }
+
+  // Future<List<Person>> getAllPeopleOffline() async {
+  //   List<db.PersonData> peopleData = await MyApp.appDataBase.getAllPeople();
+  //   List<Person> people = [];
+  //   for (int i = 0; i < peopleData.length; i++) {
+  //     people.add(Person.fromPersonData(peopleData[i]));
+  //   }
+  //   print(
+  //       "Offline Request Success---------------------------------------------------");
+  //   people.forEach((person) => print(person.url));
+  //   print(
+  //       "--------------------------------------------------------------------------");
+  //   return people;
+  // }
+
+  // Future<List<Person>> getAllPeopleOnline() async {
+  //   try {
+  //     apiCaller.setUrl(Constants.peopleRoute);
+  //     Map<String, dynamic> response =
+  //         await apiCaller.getData() as Map<String, dynamic>;
+  //     List<dynamic> results = response['results'];
+  //     List<Person> people = results.map((i) => Person.fromJson(i)).toList();
+  //     print(
+  //         "Online Request Success----------------------------------------------------");
+  //     people.forEach((person) => print(person.url));
+  //     print(
+  //         "--------------------------------------------------------------------------");
+  //     return people;
+  //   } catch (error, stacktrace) {
+  //     print(
+  //         "Online Request Failure----------------------------------------------------");
+  //     print("Exception occured: $error stackTrace: $stacktrace");
+  //     return getAllPeopleFromFirebase();
+  //   }
+  // }
+
+  // Future<List<Person>> getAllPeopleFromFirebase() async {
+  //   print(
+  //       "People Firebase Baybaaaaaaaaaay --------------------------------------------------");
+  //   CloudFirestore firestore = CloudFirestore(
+  //       collection: FirebaseFirestore.instance.collection('people'));
+  //   List<QueryDocumentSnapshot> docs = await firestore.getCollection();
+  //   List<Person> people = [];
+  //   docs.forEach((doc) {
+  //     people.add(Person.fromJson(doc.data()));
+  //   });
+  //   return people;
+  // }
+
+  // Future<Person> getPerson({int id}) async {
+  //   Person person = await getPersonOffline(id: id);
+  //   if (person != null) {
+  //     return person;
+  //   } else {
+  //     return getPersonOnline(id: id);
+  //   }
+  // }
+
+  // Future<Person> getPersonOffline({int id}) async {
+  //   db.PersonData personData = await MyApp.appDataBase.getPersonById(id);
+  //   if (personData != null) {
+  //     Person person = Person.fromPersonData(personData);
+  //     print(
+  //         "Offline Request Success---------------------------------------------------");
+  //     print(person.films);
+  //     print(
+  //         "--------------------------------------------------------------------------");
+  //     return person;
+  //   } else {
+  //     print(
+  //         "Offline Request Failure---------------------------------------------------");
+  //     print("Doesn't Exist The Online Request Will Begin........");
+  //     print(
+  //         "--------------------------------------------------------------------------");
+  //     return null;
+  //   }
+  // }
+
+  // Future<Person> getPersonOnline({int id}) async {
+  //   CloudFirestore firestore = CloudFirestore(
+  //       collection: FirebaseFirestore.instance.collection('people'));
+  //   var response;
+  //   try {
+  //     apiCaller.setUrl(Constants.peopleRoute + id.toString() + "/");
+  //     response = await apiCaller.getData();
+  //     firestore.addDocument(id: id.toString(), json: response);
+  //     print(
+  //         "Online Request Success------------------------------------------------");
+  //   } catch (error, stacktrace) {
+  //     print(
+  //         "Online Request From SWAPI Failed----------------------------------------");
+  //     print("Exception occured: $error stackTrace: $stacktrace");
+  //     print(
+  //         "Trying Firebase Cloud Firestore Now-------------------------------------");
+  //     response = await firestore.getDocument(id: id.toString());
+  //   }
+  //   Person person = Person.fromJson(response);
+  //   await MyApp.appDataBase.insertPerson(person.toPersonData());
+  //   return person;
+  // }
+
+  // For Being Online Priority
+  Future<ConnectionState> returnConnectionState() async {
+    if (await apiCaller.returnRSC() == -1) {
+      return ConnectionState.offline;
+    } else if (await apiCaller.returnRSC() == -2) {
+      return ConnectionState.poor;
+    } else {
+      return ConnectionState.online;
+    }
   }
 
-  @override
-  Future<User> loadUserData(String firebaseToken) async {
-    final prefs = await SharedPreferences.getInstance();
-    _apiCaller.setUrl("/auth/user");
-    final responseData = await _apiCaller.postData(
-      body: {'firebase_token': firebaseToken},
-      needAuthorization: true,
-    );
-    User user = User.fromJson(responseData['user']);
-    prefs.setString('userData', json.encode(user));
-    return user;
-  }
-
-  @override
-  logout() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    // String theme = preferences.getString("theme");
-    // String local = preferences.getString('languageCode');
-    Root.user = null;
-    preferences.clear();
-    // preferences.setString('languageCode', local);
-    // preferences.setString('theme', theme);
-  }
+  // Future deletePersonCache() async {
+  //   List<db.PersonData> peopleData = await MyApp.appDataBase.getAllPeople();
+  //   peopleData.forEach((person) {
+  //     if (DateTime.now().difference(DateTime.parse(person.edited)).inDays > 2) {
+  //       MyApp.appDataBase.deletePerson(person);
+  //     }
+  //   });
+  // }
 }

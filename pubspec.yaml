@@ -1,9 +1,5 @@
-name: mfawazTestChat
-description: A new Flutter project.
-
-# The following line prevents the package from being accidentally published to
-# pub.dev using `pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+name: chat_app
+description: Flutter Chat App.
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -23,93 +19,104 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  # Lists & Grids
-  flutter_staggered_grid_view: 0.3.0
-
-  # Media
-  extended_image: ^0.9.0
-  cached_network_image: ^2.1.0+1
-  flutter_svg: ^0.18.1
-  url_launcher: ^5.7.2
-
-  # Bloc
-  flutter_bloc: ^6.0.0
-  equatable: ^1.2.0
-  provider:
-
-  # Localizations
-  intl: ^0.16.0
-
-  # Utils
-  fluttertoast: ^3.1.3
-  loading_indicator_view: ^1.0.0
-  loading: ^1.0.2
-
-  # Storage
-  shared_preferences: ^0.5.6+1
-  moor_flutter: ^3.1.0
-  moor: ^3.2.0
-
-  # Network
-  http: ^0.12.0+2
-  dio: ^3.0.10
-  html: ^0.14.0+3
-
-  #sign in
-  #flutter_facebook_login: ^3.0.0
-  #google_sign_in: ^4.5.3
-  #apple_sign_in: ^0.1.0
-
-  # Others
-  flutter_speed_dial: ^1.2.4
-  font_awesome_flutter: ^8.8.1
-  html_unescape: 1.0.1+3
-  extended_nested_scroll_view: ^1.0.1
-
   flutter_localizations:
     sdk: flutter
+  firebase_core: "^0.5.3"
+  firebase_auth: "^0.18.4+1"
+  cloud_firestore: "^0.14.4"
+  firebase_database: ^4.4.0
+  firebase_messaging: ^7.0.3
+  flutter_bloc: ^6.1.0
+  equatable: ^1.2.5
+  intl: ^0.16.1
+  loading_indicator_view: ^1.0.0
+  loading: ^1.0.2
+  http: ^0.12.2
+  modal_progress_hud: ^0.1.3
+  toast: ^0.1.5
+  shared_preferences: ^0.5.6+1
+  moor_flutter: ^3.1.0
+  moor_ffi: ^0.8.0
+  path_provider: ^1.6.5
+
+
+  cupertino_icons: ^0.1.3 #0.1.2
+  fluttertoast: ^7.0.2 #3.1.3
+  flutter_local_notifications: 1.4.4+4 #1.4.0
+  photo_view: ^0.10.2 #0.5.0
+
+  image_picker: ^0.6.7+17
+  cached_network_image: ^2.5.0
+  firebase_storage: ^5.2.0
+  path: ^1.6.4
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  #cupertino_icons: ^0.1.3
 
 dev_dependencies:
+  flutter_launcher_icons: "^0.7.3"
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.7.5
-  build_runner: any
-  moor_generator: ^3.2.0
+  build_runner:
+  moor_generator: ^3.4.0
 
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter.
 flutter_icons:
-  android: launcher_icon
+  android: "ic_launcher" 
   ios: true
-  image_path: assets/images/launcher_logo.png
+  image_path: "assets/images/chat_ico.png"
 
 flutter:
 
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
   uses-material-design: true
 
-  assets:
-    - assets/lang/
-    - assets/images/
-    - assets/icons/
-
   fonts:
-    - family: Roboto
-      fonts:
-        - asset: assets/fonts/Roboto-Regular.ttf
-        - asset: assets/fonts/Roboto-Light.ttf
-        - asset: assets/fonts/Roboto-Bold.ttf
-        - asset: assets/fonts/Roboto-Medium.ttf
-        - asset: assets/fonts/Roboto-Black.ttf
     - family: Cairo
       fonts:
         - asset: assets/fonts/Cairo-Regular.ttf
         - asset: assets/fonts/Cairo-Light.ttf
+        - asset: assets/fonts/Cairo-SemiBold.ttf
+        - asset: assets/fonts/Cairo-ExtraLight.ttf
         - asset: assets/fonts/Cairo-Bold.ttf
-        - asset: assets/fonts/Cairo-Medium.ttf
         - asset: assets/fonts/Cairo-Black.ttf
-    - family: Tajawal
+
+    - family: Roboto
       fonts:
-        - asset: assets/fonts/Tajawal-Regular.ttf
-        - asset: assets/fonts/Tajawal-Light.ttf
-        - asset: assets/fonts/Tajawal-Bold.ttf
-        - asset: assets/fonts/Tajawal-Medium.ttf
-        - asset: assets/fonts/Tajawal-Black.ttf
+        - asset: assets/fonts/RobotoCondensed-Bold.ttf
+
+  assets:
+   - assets/images/
+   - assets/lang/
+   
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/assets-and-images/#resolution-aware.
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/assets-and-images/#from-packages
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/custom-fonts/#from-packages

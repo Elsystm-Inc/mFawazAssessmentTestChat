@@ -1,44 +1,32 @@
 import 'dart:io';
 import "dart:async";
-import 'package:mfawazTestChat/utils/constants.dart';
 import 'package:http/http.dart' as http;
 import "dart:convert";
 
-import 'package:shared_preferences/shared_preferences.dart';
-
-import '../main.dart';
 import 'app_exceptions.dart';
+import 'constant.dart';
 
 class APICaller {
-  String url = Constants.baseUrl;
+  var url = Constants.mainUrl;
 
   setUrl(String uri) {
-    url = Constants.baseUrl + uri;
+    url = Constants.mainUrl + uri;
   }
 
-  getToken() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
-  }
-
-  Future<dynamic> getData({Map<String, String> headers, bool needAuthorization = false}) async {
+  Future<dynamic> getData({Map<String, String> headers}) async {
     if (headers == null) {
       headers = {};
-    }
-    headers["Accept"] = "application/json";
-    headers["Content-Type"] = "application/json";
-    headers["Accept-Language"] = Root.locale.languageCode;
-    headers["currency"] = "1";
-    if (needAuthorization) {
-      String token = await getToken();
-      if (token != null) {
-        headers["Authorization"] = token;
-      }
+      headers["Accept"] = "application/json";
+    } else {
+      headers["Accept"] = "application/json";
     }
     try {
-      final res =
-          await http.get(Uri.encodeFull(url), headers: headers).timeout(const Duration(seconds: 50), onTimeout: () {
-        throw RequestTimeOutException("Poor internet or no internet connectivity");
+      final res = await http.get(Uri.encodeFull(url), headers: headers).timeout(
+          const Duration(
+            seconds: 20,
+          ), onTimeout: () {
+        throw RequestTimeOutException(
+            "Poor internet or no internet connectivity");
       });
       var dataRetrived = _returnResponse(res);
       return dataRetrived;
@@ -47,29 +35,25 @@ class APICaller {
     }
   }
 
-  Future<dynamic> postData({Map body, Map<String, String> headers, bool needAuthorization = false}) async {
+  Future<dynamic> postData({Map body, Map<String, String> headers}) async {
     if (headers == null) {
       headers = {};
-    }
-    headers["Accept"] = "application/json";
-    headers["Content-Type"] = "application/json";
-    headers["Accept-Language"] = Root.locale.languageCode;
-    headers["currency"] = "1";
-    if (needAuthorization) {
-      String token = await getToken();
-      if (token != null) {
-        headers["Authorization"] = token;
-      }
+      headers["Accept"] = "application/json";
+    } else {
+      headers["Accept"] = "application/json";
     }
     if (body == null) {
       body = {};
     }
     try {
-      final res = await http.post(Uri.encodeFull(url), headers: headers, body: json.encode(body)).timeout(
-          const Duration(
-            seconds: 50,
-          ), onTimeout: () {
-        throw RequestTimeOutException("Poor internet or no internet connectivity");
+      final res = await http
+          .post(Uri.encodeFull(url), headers: headers, body: body)
+          .timeout(
+              const Duration(
+                seconds: 5,
+              ), onTimeout: () {
+        throw RequestTimeOutException(
+            "Poor internet or no internet connectivity");
       });
       var dataRetrived = _returnResponse(res);
       return dataRetrived;
@@ -78,27 +62,21 @@ class APICaller {
     }
   }
 
-  Future<dynamic> deleteData({Map<String, String> headers, bool needAuthorization = false}) async {
+  Future<dynamic> deleteData({Map<String, String> headers}) async {
     if (headers == null) {
       headers = {};
+      headers["Accept"] = "application/json";
+    } else {
+      headers["Accept"] = "application/json";
     }
-    headers["Accept"] = "application/json";
-    headers["Content-Type"] = "application/json";
-    headers["Accept-Language"] = Root.locale.languageCode;
-    headers["currency"] = "1";
-    if (needAuthorization) {
-      String token = await getToken();
-      if (token != null) {
-        headers["Authorization"] = token;
-      }
-    }
-    print(url);
     try {
-      final res = await http.delete(Uri.encodeFull(url), headers: headers).timeout(
-          const Duration(
-            seconds: 50,
-          ), onTimeout: () {
-        throw RequestTimeOutException("Poor internet or no internet connectivity");
+      final res =
+          await http.delete(Uri.encodeFull(url), headers: headers).timeout(
+              const Duration(
+                seconds: 5,
+              ), onTimeout: () {
+        throw RequestTimeOutException(
+            "Poor internet or no internet connectivity");
       });
       var dataRetrived = _returnResponse(res);
       return dataRetrived;
@@ -107,26 +85,25 @@ class APICaller {
     }
   }
 
-  Future<dynamic> putData({Map body, Map<String, String> headers, bool needAuthorization}) async {
+  Future<dynamic> putData({Map body, Map<String, String> headers}) async {
     if (headers == null) {
       headers = {};
+      headers["Accept"] = "application/json";
+    } else {
+      headers["Accept"] = "application/json";
     }
-    headers["Accept"] = "application/json";
-    headers["Content-Type"] = "application/json";
-    headers["Accept-Language"] = Root.locale.languageCode;
-    headers["currency"] = "1";
-    if (needAuthorization) {
-      String token = await getToken();
-      if (token != null) {
-        headers["Authorization"] = token;
-      }
+    if (body == null) {
+      body = {};
     }
     try {
-      final res = await http.put(Uri.encodeFull(url), headers: headers, body: json.encode(body)).timeout(
-          const Duration(
-            seconds: 50,
-          ), onTimeout: () {
-        throw RequestTimeOutException("Poor internet or no internet connectivity");
+      final res = await http
+          .put(Uri.encodeFull(url), headers: headers, body: body)
+          .timeout(
+              const Duration(
+                seconds: 5,
+              ), onTimeout: () {
+        throw RequestTimeOutException(
+            "Poor internet or no internet connectivity");
       });
       var dataRetrived = _returnResponse(res);
       return dataRetrived;
@@ -137,16 +114,10 @@ class APICaller {
 
   _returnResponse(http.Response response) {
     print(response.statusCode);
-    // print(response.headers);
-    print(response.body);
-    print(response.request);
     switch (response.statusCode) {
-      case 201:
       case 200:
         final responseBody = json.decode(response.body);
         return responseBody;
-      case 204:
-        return [];
       case 400:
         throw BadRequestException("Server error please try again later.");
       case 401:
@@ -154,7 +125,8 @@ class APICaller {
       case 403:
         throw UnauthorisedException(response.body.toString());
       case 404:
-        throw BadRequestException("Internal server error, please try again later");
+        throw BadRequestException(
+            "Internal server error, please try again later");
       case 422:
         throw UnprocessableEntity(response.body.toString());
       case 500:
@@ -165,6 +137,29 @@ class APICaller {
         throw FetchDataException(
           "Error occured while communicating with Server with StatusCode : ${response.statusCode}",
         );
+    }
+  }
+
+  Future<int> returnRSC({Map<String, String> headers}) async {
+    if (headers == null) {
+      headers = {};
+      headers["Accept"] = "application/json";
+    } else {
+      headers["Accept"] = "application/json";
+    }
+    try {
+      final res = await http.get(Uri.encodeFull(url), headers: headers).timeout(
+          const Duration(
+            seconds: 5,
+          ), onTimeout: () {
+        throw RequestTimeOutException(
+            "Poor internet or no internet connectivity");
+      });
+      return res.statusCode;
+    } on SocketException {
+      return -1;
+    } on RequestTimeOutException {
+      return -2;
     }
   }
 }

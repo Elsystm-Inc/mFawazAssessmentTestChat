@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "949957468721",
+    "project_id": "interviewing-f4e2d",
+    "storage_bucket": "interviewing-f4e2d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:949957468721:android:1b665a96d93187bd3e6b10",
+        "android_client_info": {
+          "package_name": "com.example.chat_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "949957468721-ek7005cmj0eik09uv97efokq1nq3orah.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCW3EzR6pV0GvTNpN9iEh5HDCG5HuOPNI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "949957468721-ek7005cmj0eik09uv97efokq1nq3orah.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:949957468721:android:fafc96ed78eb73153e6b10",
+        "android_client_info": {
+          "package_name": "com.example.elsystem_test"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "949957468721-ek7005cmj0eik09uv97efokq1nq3orah.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCW3EzR6pV0GvTNpN9iEh5HDCG5HuOPNI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "949957468721-ek7005cmj0eik09uv97efokq1nq3orah.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
